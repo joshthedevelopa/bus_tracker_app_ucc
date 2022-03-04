@@ -17,13 +17,7 @@ class BusTrackerApp extends StatelessWidget {
       home: FutureBuilder<dynamic>(
         future: Storage.get("loggedIn"),
         builder: (context, _loggedIn) {
-          bool? _value = _loggedIn.data as bool?;
-
-          if(_value ?? false) {
-            return const HomeView();
-          } else {
-            return const IntroView();
-          }
+          return const HomeView();
         }
       ),
     );

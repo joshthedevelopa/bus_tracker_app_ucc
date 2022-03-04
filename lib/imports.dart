@@ -11,6 +11,8 @@ export 'package:google_maps_flutter/google_maps_flutter.dart';
 export 'package:geolocator/geolocator.dart';
 export 'package:flutter_polyline_points/flutter_polyline_points.dart';
 export 'package:shared_preferences/shared_preferences.dart';
+export 'package:mqtt_client/mqtt_client.dart';
+export 'package:mqtt_client/mqtt_server_client.dart';
 
 // Views
 export 'views/home_view.dart';
@@ -38,3 +40,4 @@ export 'utilities/string_extension.dart';
 export "services/permission_handler.dart";
 export 'services/api_request.dart';
 export 'services/storage.dart';
+export 'services/mqtt_controller.dart';

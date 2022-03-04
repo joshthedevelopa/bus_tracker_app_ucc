@@ -8,6 +8,8 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
+  late MqttController _mqttController;
+
   EdgeInsets? _screenInsets;
   ValueNotifier<bool> isLoading = ValueNotifier(false);
   String selectedDuration = "0.0 hrs",
@@ -16,6 +18,7 @@ class _HomeViewState extends State<HomeView> {
 
   LatLng? myLocation;
   List<Marker> markers = [];
+  List<Marker> busMarkers = [];
   Polyline? polyline;
   Location? selectedLocation;
 
@@ -23,7 +26,7 @@ class _HomeViewState extends State<HomeView> {
   final Completer<GoogleMapController> mapCompleter = Completer();
   CameraPosition position = CameraPosition(
     target: stations.last.coordinates,
-    zoom: 16.0,
+    zoom: 14.0,
   );
 
   Future locationAccess() async {
@@ -41,6 +44,9 @@ class _HomeViewState extends State<HomeView> {
           markers.add(Marker(
             markerId: const MarkerId("_mine_"),
             position: myLocation!,
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueAzure,
+            ),
             infoWindow: const InfoWindow(
               title: "Your Location",
             ),
@@ -56,6 +62,29 @@ class _HomeViewState extends State<HomeView> {
     return;
   }
 
+  void getBuses() async {
+    Map _map = await ApiServices.getBusLocations();
+    if (_map['status'] == "OK") {
+      for (Map _map in _map['data']) {
+        markers.add(Marker(
+          markerId: MarkerId("_bus_${_map['id']}"),
+          position: LatLng(
+            double.tryParse(_map['lat']) ?? 0,
+            double.tryParse(_map['lng']) ?? 0,
+          ),
+          icon: await BitmapDescriptor.fromAssetImage(
+              ImageConfiguration(
+                bundle: const AssetImage('assets/images/bus.png').bundle,
+              ),
+              "_bus_${_map['id']}"),
+          infoWindow: InfoWindow(
+            title: "Speed: ${_map['speed']}",
+          ),
+        ));
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -64,12 +93,18 @@ class _HomeViewState extends State<HomeView> {
     mapCompleter.future.then((_controller) async {
       controller = _controller;
       await locationAccess();
+      getBuses();
       isLoading.value = false;
+
     });
+  
+    _mqttController = MqttController();
+    _mqttController.connect();
   }
 
   @override
   Widget build(BuildContext context) {
+    _mqttController.data();
     _screenInsets = MediaQuery.of(context).viewPadding;
 
     return Scaffold(
@@ -78,7 +113,10 @@ class _HomeViewState extends State<HomeView> {
           GoogleMap(
             mapType: MapType.normal,
             initialCameraPosition: position,
-            markers: markers.toSet(),
+            markers: {
+              ...markers,
+              ...busMarkers,
+            },
             polylines: {
               if (polyline != null) polyline!,
             },
@@ -108,7 +146,10 @@ class _HomeViewState extends State<HomeView> {
             subtitle: selectedDistance,
             description: selectedName,
             screenInsets: _screenInsets!,
-            action: _showProfile,
+            action: () {
+              _mqttController.subscribe();
+              _mqttController.data();
+            },
             locate: () {
               if (selectedLocation != null) {
                 controller.moveCamera(
@@ -286,130 +327,130 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  void _showProfile() async {
-    String _name = await Storage.get("name");
-    String _index = await Storage.get("index");
+  // void _showProfile() async {
+  //   String _name = await Storage.get("name");
+  //   String _index = await Storage.get("index");
 
-    Display.show(
-      context,
-      child: Center(
-        child: Stack(
-          children: [
-            Card(
-              clipBehavior: Clip.hardEdge,
-              margin: const EdgeInsets.all(8.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Material(
-                      color: ColorTheme.secondary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: const SizedBox(
-                        width: 80,
-                        height: 80,
-                        child: Center(
-                          child: Icon(
-                            Icons.person,
-                            size: 40,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 12.0),
-                        _tile(
-                          label: "Name",
-                          text: _name,
-                        ),
-                        const SizedBox(height: 4.0),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _tile(
-                                    label: "Index",
-                                    text: _index,
-                                  ),
-                                  const SizedBox(height: 12.0),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () async {
-                                Navigator.pop(context);
-                                isLoading.value = true;
+  //   Display.show(
+  //     context,
+  //     child: Center(
+  //       child: Stack(
+  //         children: [
+  //           Card(
+  //             clipBehavior: Clip.hardEdge,
+  //             margin: const EdgeInsets.all(8.0),
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(10.0),
+  //             ),
+  //             child: Row(
+  //               crossAxisAlignment: CrossAxisAlignment.center,
+  //               children: [
+  //                 Padding(
+  //                   padding: const EdgeInsets.all(8.0),
+  //                   child: Material(
+  //                     color: ColorTheme.secondary,
+  //                     shape: RoundedRectangleBorder(
+  //                       borderRadius: BorderRadius.circular(10.0),
+  //                     ),
+  //                     child: const SizedBox(
+  //                       width: 80,
+  //                       height: 80,
+  //                       child: Center(
+  //                         child: Icon(
+  //                           Icons.person,
+  //                           size: 40,
+  //                           color: Colors.white,
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 Expanded(
+  //                   child: Column(
+  //                     mainAxisSize: MainAxisSize.min,
+  //                     crossAxisAlignment: CrossAxisAlignment.start,
+  //                     children: [
+  //                       const SizedBox(height: 12.0),
+  //                       _tile(
+  //                         label: "Name",
+  //                         text: _name,
+  //                       ),
+  //                       const SizedBox(height: 4.0),
+  //                       Row(
+  //                         children: [
+  //                           Expanded(
+  //                             child: Column(
+  //                               mainAxisAlignment: MainAxisAlignment.start,
+  //                               crossAxisAlignment: CrossAxisAlignment.start,
+  //                               mainAxisSize: MainAxisSize.min,
+  //                               children: [
+  //                                 _tile(
+  //                                   label: "Index",
+  //                                   text: _index,
+  //                                 ),
+  //                                 const SizedBox(height: 12.0),
+  //                               ],
+  //                             ),
+  //                           ),
+  //                           IconButton(
+  //                             onPressed: () async {
+  //                               Navigator.pop(context);
+  //                               isLoading.value = true;
 
-                                Future.delayed(
-                                  const Duration(seconds: 3),
-                                ).then((value) async {
-                                  await Storage.clear();
+  //                               Future.delayed(
+  //                                 const Duration(seconds: 3),
+  //                               ).then((value) async {
+  //                                 await Storage.clear();
 
-                                  isLoading.value = false;
+  //                                 isLoading.value = false;
 
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(builder: (context) {
-                                      return const IntroView();
-                                    }),
-                                  );
-                                });
-                              },
-                              color: ColorTheme.primary,
-                              icon: const Icon(Icons.logout),
-                            )
-                          ],
-                        ),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-            ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: InkResponse(
-                onTap: () {
-                  Navigator.pop(context);
-                },
-                child: Card(
-                  shape: const CircleBorder(),
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.all(3.0),
-                    child: Icon(
-                      Icons.close,
-                      size: 20,
-                      color: Colors.blueGrey.withOpacity(
-                        0.6,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  //                                 Navigator.pushReplacement(
+  //                                   context,
+  //                                   MaterialPageRoute(builder: (context) {
+  //                                     return const IntroView();
+  //                                   }),
+  //                                 );
+  //                               });
+  //                             },
+  //                             color: ColorTheme.primary,
+  //                             icon: const Icon(Icons.logout),
+  //                           )
+  //                         ],
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 )
+  //               ],
+  //             ),
+  //           ),
+  //           Positioned(
+  //             top: 0,
+  //             right: 0,
+  //             child: InkResponse(
+  //               onTap: () {
+  //                 Navigator.pop(context);
+  //               },
+  //               child: Card(
+  //                 shape: const CircleBorder(),
+  //                 margin: EdgeInsets.zero,
+  //                 child: Padding(
+  //                   padding: const EdgeInsets.all(3.0),
+  //                   child: Icon(
+  //                     Icons.close,
+  //                     size: 20,
+  //                     color: Colors.blueGrey.withOpacity(
+  //                       0.6,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Column _tile({
     String label = "",

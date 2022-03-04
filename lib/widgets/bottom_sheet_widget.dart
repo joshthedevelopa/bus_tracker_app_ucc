@@ -40,65 +40,60 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              children: [
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  top: 0,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: InkResponse(
-                        onTap: () {
-                          setState(() {
-                            isExpanded = !isExpanded;
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: AnimatedRotation(
-                            duration: const Duration(milliseconds: 600),
-                            curve: Curves.decelerate,
-                            turns: isExpanded ? .5 : 0,
-                            child: const Icon(
-                              Icons.arrow_upward_sharp,
-                              color: ColorTheme.primary,
-                              size: 22,
-                            ),
-                          ),
-                        ),
+            Material(
+              color: Colors.transparent,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: InkResponse(
+                  onTap: () {
+                    widget.action?.call();
+                    // setState(() {
+                    //   isExpanded = !isExpanded;
+                    // });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: AnimatedRotation(
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.decelerate,
+                      turns: isExpanded ? .5 : 0,
+                      child: const Icon(
+                        Icons.arrow_upward_sharp,
+                        color: ColorTheme.primary,
+                        size: 22,
                       ),
                     ),
                   ),
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: CustomCard(
-                    margin: const EdgeInsets.all(16.0),
-                    radius: 400,
-                    padding: EdgeInsets.zero,
-                    child: Material(
-                      shape: const CircleBorder(),
-                      color: ColorTheme.primary,
-                      child: Padding(
-                        padding: EdgeInsets.zero,
-                        child: IconButton(
-                          iconSize: 24,
-                          onPressed: widget.action,
-                          icon: const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
+            // Stack(
+            //   children: [
+            //     // Align(
+            //     //   alignment: Alignment.centerRight,
+            //     //   child: CustomCard(
+            //     //     margin: const EdgeInsets.all(16.0),
+            //     //     radius: 400,
+            //     //     padding: EdgeInsets.zero,
+            //     //     child: Material(
+            //     //       shape: const CircleBorder(),
+            //     //       color: ColorTheme.primary,
+            //     //       child: Padding(
+            //     //         padding: EdgeInsets.zero,
+            //     //         child: IconButton(
+            //     //           iconSize: 24,
+            //     //           onPressed: widget.action,
+            //     //           icon: const Icon(
+            //     //             Icons.person,
+            //     //             color: Colors.white,
+            //     //           ),
+            //     //         ),
+            //     //       ),
+            //     //     ),
+            //     //   ),
+            //     // ),
+            //   ],
+            // ),
             CustomCard(
               radius: 15.0,
               width: double.infinity,
@@ -117,17 +112,18 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
                             borderRadius: BorderRadius.circular(10.0),
                           ),
                           color: ColorTheme.secondary,
-                          child: widget.image ?? const SizedBox(
-                            height: 80,
-                            width: 80,
-                            child: Center(
-                              child: Icon(
-                                Icons.pin_drop,
-                                size: 28.0,
-                                color: Colors.white,
+                          child: widget.image ??
+                              const SizedBox(
+                                height: 80,
+                                width: 80,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.pin_drop,
+                                    size: 28.0,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
                         ),
                       ),
                       Expanded(
